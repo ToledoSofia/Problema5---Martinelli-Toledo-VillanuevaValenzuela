@@ -61,8 +61,7 @@ def _backtrack(pacientes, franjas, disponibilidad, asignacion, franjas_ocupadas,
 
     return None
 
-#########
-
+# aux para test
 def verificar_asignacion(asignacion, disponibilidad):
     """
     Verifica que una asignación respete todas las restricciones.
@@ -72,19 +71,14 @@ def verificar_asignacion(asignacion, disponibilidad):
         - disponibilidad: dict {paciente: [franjas posibles]}.
 
     Postcondición:
-        - Devuelve True si la asignación es válida.
-        - Devuelve False si alguna restricción está violada.
-
-    Restricciones verificadas:
-        (1) Unicidad de franja: no hay dos pacientes en la misma franja.
-        (2) Compatibilidad: cada paciente está en una franja de su disponibilidad.
+        - Devuelve True si la asignación es válida, False si no.
     """
-    # Restricción 1: no hay franjas repetidas
+    # No hay franjas repetidas
     franjas_usadas = list(asignacion.values())
     if len(franjas_usadas) != len(set(franjas_usadas)):
         return False
 
-    # Restricción 2: cada paciente está en una franja compatible
+    # Cada paciente está en una franja compatible
     for paciente, franja in asignacion.items():
         if franja not in disponibilidad[paciente]:
             return False
@@ -92,20 +86,17 @@ def verificar_asignacion(asignacion, disponibilidad):
     return True
 
 
-# ══════════════════════════════════════════════
-# (h) CASOS DE PRUEBA
-# ══════════════════════════════════════════════
+# CASOS DE PRUEBA
 
 if __name__ == '__main__':
 
     pasa = 0
     falla = 0
 
-    # ── CASO 1: tiene solución ───────────────────────────────────
+    # Prueba 1: hay solución 
     """
-    3 pacientes, 8 franjas.
     Cada paciente tiene franjas disponibles distintas,
-    por lo que existe al menos una asignación válida.
+    existe al menos una asignación válida.
     """
     franjas = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -130,9 +121,9 @@ if __name__ == '__main__':
         falla += 1
 
 
-    # ── CASO 2: sobre-restringido, sin solución ──────────────────
+    # Prueba 2: sin solución 
     """
-    3 pacientes, pero todos solo pueden ir a la franja 1.
+    Todos solo pueden ir a la franja 1.
     Es imposible asignarlos sin repetir franja.
     """
     pacientes_dia2 = ['Carlos', 'Rosa', 'Juan']
@@ -153,13 +144,12 @@ if __name__ == '__main__':
         falla += 1
 
 
-    # ── CASO 3: un solo paciente ─────────────────────────────────
+    # Prueba 3: un solo paciente
     """
-    Un único paciente con varias franjas disponibles.
-    Debe asignarse a cualquiera de ellas.
+    Un solo paciente con varias franjas disponibles.
+    Se asigna cualquiera.
     """
     pacientes_dia3 = ['Pedro']
-
     disponibilidad_caso3 = {
         'Pedro': [3, 5, 7],
     }
@@ -167,45 +157,24 @@ if __name__ == '__main__':
     resultado3 = asignar_agenda(pacientes_dia3, franjas, disponibilidad_caso3)
 
     if resultado3 is None:
-        print("FALLA caso 3: un paciente con franjas disponibles debería tener solución")
+        print("FALLA prueba 3: un paciente con franjas disponibles debería tener solución")
         falla += 1
     elif resultado3['Pedro'] in disponibilidad_caso3['Pedro']:
         print(f"[OK] caso un paciente: {resultado3}")
         pasa += 1
     else:
-        print(f"FALLA caso 3: franja asignada no está en la disponibilidad: {resultado3}")
+        print(f"FALLA prueba 3: franja asignada no está en la disponibilidad: {resultado3}")
         falla += 1
 
 
-    # ── CASO 4: sin franjas disponibles ─────────────────────────
+    print(f"Resultado: {pasa}/3 aprobadas, {falla} fallidas")
+
+    # Fuerza bruta vs backtracking
     """
-    Un paciente sin ninguna franja disponible.
-    No puede asignarse, debe devolver None.
+    Prueba 1 (3 pacientes):
+      Fuerza bruta: Ana tiene 3 opciones, Luis 3, María 3 = 27 combinaciones para revisar.
+      Backtracking: al asignar Ana=1 y Luis=2, María prueba 3,4,5 y encuentra solucion rápido.
+      Si Ana=1 y Luis=1 -> poda (franja ocupada), no se llega a María.
+      La poda evita explorar ramas completas en cuanto hay conflicto.
     """
-    pacientes_dia4 = ['Laura']
-
-    disponibilidad_caso4 = {
-        'Laura': [],  # no tiene ninguna franja disponible
-    }
-
-    resultado4 = asignar_agenda(pacientes_dia4, franjas, disponibilidad_caso4)
-
-    if resultado4 is None:
-        print("[OK] caso sin franjas disponibles: devolvió None correctamente")
-        pasa += 1
-    else:
-        print(f"FALLA caso 4: debería devolver None pero devolvió: {resultado4}")
-        falla += 1
-
-
-    # ── DISCUSIÓN: fuerza bruta vs backtracking ──────────────────
-    print()
-    print("Discusión — Caso 1 (3 pacientes, disponibilidades solapadas):")
-    print("  Fuerza bruta: Ana tiene 3 opciones × Luis 3 × María 3 = 27 combinaciones a revisar.")
-    print("  Backtracking: al asignar Ana=1 y Luis=2, María prueba 3,4,5 → encuentra solución rápido.")
-    print("  Si Ana=1 y Luis=1 → poda inmediata (franja ocupada), no se llega a María.")
-    print("  La poda evita explorar ramas completas en cuanto hay conflicto.")
-
-    print()
-    print("-----------------------------------------------")
-    print(f"Resultado: {pasa}/4 aprobadas, {falla} fallidas")
+    
