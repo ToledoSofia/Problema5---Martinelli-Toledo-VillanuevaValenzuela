@@ -32,7 +32,8 @@ TAM_REGISTRO = struct.calcsize(FORMATO)  # 75 bytes
 
 def _normalizar(texto):
     """Normaliza texto para comparación: minúsculas sin acentos."""
-    return unicodedata.normalize('NFD', texto.lower())
+    return"".join(char for char in unicodedata.normalize('NFD', texto.lower())
+    if unicodedata.category(char) != "Mn")
 
 # merge_sort estable:
 
