@@ -18,8 +18,10 @@ def _ajustar_cadena(texto, longitud):
         - Si es más corta, struct.pack agrega relleno con bytes nulos.
     """
 
-    texto_bytes = texto.encode('utf-8')
-    return texto_bytes[:longitud]
+    while len(texto.encode("utf-8")) > longitud:
+        texto = texto[:-1]
+
+    return texto.encode("utf-8")
 
 
 
