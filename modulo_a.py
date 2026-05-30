@@ -1,16 +1,7 @@
 import struct
 
-# =============================================================================
-# Constantes globales (fuente única de verdad)
-# =============================================================================
-
 FORMATO = '<i30s24s16sB'
 TAM_REGISTRO = struct.calcsize(FORMATO)
-
-
-# =============================================================================
-# Funciones auxiliares privadas
-# =============================================================================
 
 
 def _ajustar_cadena(texto, longitud):
@@ -31,10 +22,8 @@ def _ajustar_cadena(texto, longitud):
     return texto_bytes[:longitud]
 
 
-# =============================================================================
-# Módulo 1 — Persistencia binaria de pacientes
-# =============================================================================
 
+# Modulo 1 — Persistencia binaria de pacientes
 
 def empaquetar_paciente(dni, apellido, nombre, telefono, prioridad):
     """
@@ -92,11 +81,8 @@ def desempaquetar_paciente(registro_bytes):
 # Epílogo
     return paciente
 
-# =============================================================================
-# Inciso (b)
-# =============================================================================
 
-## Creación del archivo y lectura por acceso directo
+# Creación del archivo y lectura por acceso directo
 
 
 def crear_archivo_pacientes(ruta, lista_pacientes):
@@ -164,63 +150,62 @@ def leer_paciente(archivo, k):
     return paciente
 
 
-# =============================================================================
+
 # Casos de prueba
-# =============================================================================
+if __name__ == '__main__':
+    pacientes = [{ 'dni': 40111222,
+            'apellido': 'Gomez',
+            'nombre': 'Ana',
+            'telefono': '1122334455',
+            'prioridad': 1},
+        
+        {'dni': 38999111,
+        'apellido': 'Perez',
+        'nombre': 'Juan',
+        'telefono': '1166778899',
+        'prioridad': 2},
 
-pacientes = [{ 'dni': 40111222,
-        'apellido': 'Gomez',
-        'nombre': 'Ana',
-        'telefono': '1122334455',
-        'prioridad': 1},
-       
-    {'dni': 38999111,
-    'apellido': 'Perez',
-    'nombre': 'Juan',
-    'telefono': '1166778899',
-    'prioridad': 2},
+        {'dni': 42000888,
+        'apellido': 'Rodriguez',
+        'nombre': 'Lucia',
+        'telefono': '1144556677',
+        'prioridad': 3}]
 
-    {'dni': 42000888,
-    'apellido': 'Rodriguez',
-    'nombre': 'Lucia',
-    'telefono': '1144556677',
-    'prioridad': 3}]
-
-ruta_archivo = 'pacientes.dat'
-
-
-# Crear archivo binario
-crear_archivo_pacientes(ruta_archivo, pacientes)
+    ruta_archivo = 'pacientes.dat'
 
 
-# Leer pacientes por acceso directo
-with open(ruta_archivo, 'rb') as archivo:
-
-    paciente_0 = leer_paciente(archivo, 0)
-    paciente_1 = leer_paciente(archivo, 1)
-    paciente_2 = leer_paciente(archivo, 2)
+    # Crear archivo binario
+    crear_archivo_pacientes(ruta_archivo, pacientes)
 
 
-print('Paciente 0:')
-print(paciente_0)
-print()
+    # Leer pacientes por acceso directo
+    with open(ruta_archivo, 'rb') as archivo:
 
-print('Paciente 1:')
-print(paciente_1)
-print()
-
-print('Paciente 2:')
-print(paciente_2)
-print()
+        paciente_0 = leer_paciente(archivo, 0)
+        paciente_1 = leer_paciente(archivo, 1)
+        paciente_2 = leer_paciente(archivo, 2)
 
 
-# Verificación del tamaño del archivo
-with open(ruta_archivo, 'rb') as archivo:
+    print('Paciente 0:')
+    print(paciente_0)
+    print()
 
-    archivo.seek(0, 2)
-    tamanio = archivo.tell()
+    print('Paciente 1:')
+    print(paciente_1)
+    print()
+
+    print('Paciente 2:')
+    print(paciente_2)
+    print()
 
 
-print('Tamaño del registro:', TAM_REGISTRO)
-print('Tamaño total del archivo:', tamanio)
-print('Cantidad esperada:', len(pacientes) * TAM_REGISTRO)
+    # Verificación del tamaño del archivo
+    with open(ruta_archivo, 'rb') as archivo:
+
+        archivo.seek(0, 2)
+        tamanio = archivo.tell()
+
+
+    print('Tamaño del registro:', TAM_REGISTRO)
+    print('Tamaño total del archivo:', tamanio)
+    print('Cantidad esperada:', len(pacientes) * TAM_REGISTRO)

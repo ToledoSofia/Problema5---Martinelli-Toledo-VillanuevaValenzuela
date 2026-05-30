@@ -16,37 +16,15 @@ Interfaz modulo 1
 
 import struct
 import os
+import tempfile
 import unicodedata
-
+from modulo_a import desempaquetar_paciente, empaquetar_paciente
 
 # ctes del modulo 1
 
 FORMATO = '<i30s24s16sB'
 TAM_REGISTRO = struct.calcsize(FORMATO)  # 75 bytes
 
-
-
-# Funciones del modulo 1
-# (solo para probar en este módulo)
-def _empaquetar_paciente(dni, apellido, nombre, telefono, prioridad):
-    return struct.pack(
-        FORMATO,
-        dni,
-        apellido.encode('utf-8')[:30].ljust(30, b'\x00'),
-        nombre.encode('utf-8')[:24].ljust(24, b'\x00'),
-        telefono.encode('utf-8')[:16].ljust(16, b'\x00'),
-        prioridad
-    )
-
-def _desempaquetar_paciente(registro):
-    dni, apellido_b, nombre_b, telefono_b, prioridad = struct.unpack(FORMATO, registro)
-    return {
-        'dni':       dni,
-        'apellido':  apellido_b.rstrip(b'\x00').decode('utf-8'),
-        'nombre':    nombre_b.rstrip(b'\x00').decode('utf-8'),
-        'telefono':  telefono_b.rstrip(b'\x00').decode('utf-8'),
-        'prioridad': prioridad
-    }
 
 
 
@@ -161,7 +139,7 @@ def _leer_todos(ruta):
     with open(ruta, 'rb') as f:
         registro = f.read(TAM_REGISTRO)
         while len(registro) == TAM_REGISTRO: # si es menos de los bytes (o cero) es porque termino de recorrer
-            pacientes.append(_desempaquetar_paciente(registro)) #guarda el dict del paciente en la lista
+            pacientes.append(desempaquetar_paciente(registro)) #guarda el dict del paciente en la lista
             registro = f.read(TAM_REGISTRO)
     return pacientes
 
@@ -200,4 +178,101 @@ se toma primero el elemento de la mitad izquierda (que viene de posiciones anter
 
 
 # CASOS DE PRUEBA
-# ...
+
+def crear_archivo(lista_pacientes):
+    tf = tempfile.NamedTemporaryFile(suffix='.bin', delete=False)
+    tf.close()
+    with open(tf.name, 'wb') as f:
+        for p in lista_pacientes:
+            f.write(empaquetar_paciente(
+                p['dni'], p['apellido'], p['nombre'],
+                p['telefono'], p['prioridad']
+            ))
+    return tf.name
+
+if __name__ == '__main__':
+    pasa = 0
+    falla = 0
+
+    # PRUEBA merge_sort
+
+    """
+    Elementos con la misma clave deben mantener su orden original.
+    Los tres pacientes tienen la misma prioridad (1).
+    Orden original: Pérez, García, Álvarez.
+    Tienen todos la misma prioridad, entonces deberian mantener el mismo orden.
+    """
+    pacientes = [
+        {'dni': 1, 'apellido': 'Pérez',   'nombre': 'Ana',  'telefono': '111', 'prioridad': 1},
+        {'dni': 2, 'apellido': 'García',  'nombre': 'Luis', 'telefono': '222', 'prioridad': 1},
+        {'dni': 3, 'apellido': 'Álvarez', 'nombre': 'Juan', 'telefono': '333', 'prioridad': 1},
+    ]
+    resultado = merge_sort(pacientes, prioridad)
+    dnis = [p['dni'] for p in resultado]
+    if dnis != [1,2,3]:
+        print(f"FALLA: merge_sort no es estable, orden de dnis:{dnis}")
+        falla +=1
+    else:
+        print("[OK] merge_sort: estabilidad con claves iguales")
+        pasa += 1
+
+
+    # PRUEBA listar_pacientes_ordenados — criterio 'apellido'
+
+    """Los apellidos deben quedar en orden alfabético ascendente. 
+    Incluyendo apellidos con tildes y repetidos"""
+    pacientes = [
+        {'dni': 1, 'apellido': 'Rodríguez', 'nombre': 'Ana',    'telefono': '111', 'prioridad': 2},
+        {'dni': 2, 'apellido': 'García',    'nombre': 'Luis',   'telefono': '222', 'prioridad': 1},
+        {'dni': 3, 'apellido': 'Álvarez',   'nombre': 'María',  'telefono': '333', 'prioridad': 3},
+        {'dni': 4, 'apellido': 'Pérez',     'nombre': 'Carlos', 'telefono': '444', 'prioridad': 1},
+        {'dni': 5, 'apellido': 'Pérez',     'nombre': 'Juan', 'telefono': '555', 'prioridad': 1},
+    ]
+    ruta = crear_archivo(pacientes)
+    try:
+        resultado = listar_pacientes_ordenados(ruta, 'apellido')
+        apellidos = [p['apellido'] for p in resultado]
+        if apellidos == ['Álvarez', 'García', 'Pérez', 'Pérez', 'Rodríguez']:
+            print("[OK] apellido: orden alfabético básico")
+            pasa += 1
+        else:
+            print(f"Orden incorrecto: {apellidos}")
+            falla +=1
+    finally:
+        os.unlink(ruta)
+
+
+
+    # PRUEBA listar_pacientes_ordenados — criterio 'prioridad'
+
+    """ Debe ordenarse por prioridad, dentro de cada prioridad los apellidos deben estar en orden alfabético."""
+    pacientes = [
+        {'dni': 1, 'apellido': 'Pérez',     'nombre': 'Ana',   'telefono': '111', 'prioridad': 1},
+        {'dni': 2, 'apellido': 'Álvarez',   'nombre': 'Luis',  'telefono': '222', 'prioridad': 1},
+        {'dni': 3, 'apellido': 'Rodríguez', 'nombre': 'María', 'telefono': '333', 'prioridad': 2},
+        {'dni': 4, 'apellido': 'García',    'nombre': 'Juan',  'telefono': '444', 'prioridad': 2},
+        {'dni': 5, 'apellido': 'Fernández', 'nombre': 'Rosa',  'telefono': '555', 'prioridad': 1},
+    ]
+    ruta = crear_archivo(pacientes)
+    try:
+        resultado = listar_pacientes_ordenados(ruta, 'prioridad')
+
+        prio1 = [p['apellido'] for p in resultado if p['prioridad'] == 1]
+        claves1 = [_normalizar(a) for a in prio1]
+
+        prio2 = [p['apellido'] for p in resultado if p['prioridad'] == 2]
+        claves2 = [_normalizar(a) for a in prio2]
+
+        if claves1 == sorted(claves1) and claves2 == sorted(claves2): # comparación con sorted
+            print(f"[OK] prioridad: sub orden alfabético P1: {prio1}, P2: {prio2}")
+            pasa += 1
+        else:
+            print("FALLA: falla en el orden por prioridad")
+            falla += 1
+    finally:
+        os.unlink(ruta)
+
+
+    print("-----------------------------------------------")
+    print(f"Resultado: {pasa}/3 aprobadas, {falla} fallidas")
+    
